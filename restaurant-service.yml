@@ -1,0 +1,67 @@
+spring:
+ application:
+  name: restaurant-service
+
+server:
+ port: ${app_port}
+
+eureka:
+ client:
+  serviceURL:
+   defaultZone: http://localhost:8761/eureka
+#   defaultZone: http://localhost:8901/eureka,http://localhost:8902/eureka
+
+#feign:
+# circuitbreaker:
+#  enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      backendService:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 2
+        minimum-number-of-calls: 1
+        wait-duration-in-open-state: 10000
+        failure-rate-threshold: 1
+        automatic-transition-from-open-to-half-open-enabled: true
+        slow-call-rate-threshold: 1
+        slow-call-duration-threshold: 2000
+  retry:
+    instances:
+      backendService:
+        max-attempts: 3
+        wait-duration: 500ms
+  rateLimiter:
+    instances:
+      backendService:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 500ms
+  bulkhead:
+    instances:
+      backendService:
+        max-concurrent-calls: 5
+        max-wait-duration: 0
+  timeLimiter:
+    instances:
+      backendService:
+        timeout-duration: 2s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: RestaurantServiceApplication
+
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
